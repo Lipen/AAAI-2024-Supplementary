@@ -1,6 +1,4 @@
-import os
 import time
-from collections import defaultdict
 
 import click
 import tqdm
