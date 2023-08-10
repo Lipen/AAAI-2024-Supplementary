@@ -146,14 +146,18 @@ def cli(
             new_binary = [x for x in binary if x not in unique_binary]
             new_binary_per_backdoor.append(new_binary)
             unique_binary.update(binary)
-            print(f"Derived {len(binary)} ({len(new_binary)} new, {sum(1 for c in binary if c in cnf_binary)} in cnf) binary clauses: {binary}")
+            print(
+                f"Derived {len(binary)} ({len(new_binary)} new, {sum(1 for c in binary if c in cnf_binary)} in cnf) binary clauses: {binary}"
+            )
 
             ternary = sorted(tuple(sorted(c, key=abs)) for c in clauses if len(c) == 3)
             ternary_per_backdoor.append(ternary)
             new_ternary = [x for x in ternary if x not in unique_ternary]
             new_ternary_per_backdoor.append(new_ternary)
             unique_ternary.update(ternary)
-            print(f"Derived {len(ternary)} ({len(new_ternary)} new, {sum(1 for c in ternary if c in cnf_ternary)} in cnf) ternary clauses: {ternary}")
+            print(
+                f"Derived {len(ternary)} ({len(new_ternary)} new, {sum(1 for c in ternary if c in cnf_ternary)} in cnf) ternary clauses: {ternary}"
+            )
 
             large = sorted(tuple(sorted(c, key=abs)) for c in clauses if len(c) > 3)
             large_per_backdoor.append(large)
@@ -209,7 +213,9 @@ def cli(
     print(f"Derived {len(unique_binary)} ({sum(1 for c in unique_binary if c in cnf_binary)} in cnf) unique binary")
     print(f"Derived {len(unique_ternary)} ({sum(1 for c in unique_ternary if c in cnf_ternary)} in cnf) unique ternary")
     print(f"Derived {len(unique_large)} ({sum(1 for c in unique_large if c in cnf_large)} in cnf) unique large")
-    print(f"Total derived {len(unique_units)+len(unique_binary)+len(unique_ternary)+len(unique_large)} ({sum(1 for x in unique_units if x in cnf_units) + sum(1 for c in unique_binary if c in cnf_binary) + sum(1 for c in unique_ternary if c in cnf_ternary) + sum(1 for c in unique_large if c in cnf_large)} in cnf) unique clauses")
+    print(
+        f"Total derived {len(unique_units)+len(unique_binary)+len(unique_ternary)+len(unique_large)} ({sum(1 for x in unique_units if x in cnf_units) + sum(1 for c in unique_binary if c in cnf_binary) + sum(1 for c in unique_ternary if c in cnf_ternary) + sum(1 for c in unique_large if c in cnf_large)} in cnf) unique clauses"
+    )
 
     # print("New:")
     # for new_units in new_units_per_backdoor:
