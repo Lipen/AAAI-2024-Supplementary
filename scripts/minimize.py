@@ -40,23 +40,23 @@ def cli(
     print(f"CNF variables: {cnf.nv}")
 
     print(f"Grouping CNF clauses by size...")
-    cnf_clauses_units = []
-    cnf_clauses_binary = []
-    cnf_clauses_ternary = []
-    cnf_clauses_large = []
+    cnf_units = []
+    cnf_binary = []
+    cnf_ternary = []
+    cnf_large = []
     for clause in cnf.clauses:
         if len(clause) == 1:
-            cnf_clauses_units.append(clause[0])
+            cnf_units.append(clause[0])
         elif len(clause) == 2:
-            cnf_clauses_binary.append(tuple(sorted(clause, key=abs)))
+            cnf_binary.append(tuple(sorted(clause, key=abs)))
         elif len(clause) == 3:
-            cnf_clauses_ternary.append(tuple(sorted(clause, key=abs)))
+            cnf_ternary.append(tuple(sorted(clause, key=abs)))
         else:
-            cnf_clauses_large.append(tuple(sorted(clause, key=abs)))
-    print(f"CNF unit clauses: {len(cnf_clauses_units)}")
-    print(f"CNF binary clauses: {len(cnf_clauses_binary)}")
-    print(f"CNF ternary clauses: {len(cnf_clauses_ternary)}")
-    print(f"CNF large clauses: {len(cnf_clauses_large)}")
+            cnf_large.append(tuple(sorted(clause, key=abs)))
+    print(f"CNF unit clauses: {len(cnf_units)}")
+    print(f"CNF binary clauses: {len(cnf_binary)}")
+    print(f"CNF ternary clauses: {len(cnf_ternary)}")
+    print(f"CNF large clauses: {len(cnf_large)}")
 
     print()
     print(f"Loading backdoors from '{path_backdoors}'...")
@@ -136,31 +136,31 @@ def cli(
             for unit in units:
                 if -unit in unique_units:
                     raise RuntimeError(f"Wow! {unit}")
-            new_units = [x for x in units if x not in unique_units and x not in cnf_clauses_units]
+            new_units = [x for x in units if x not in unique_units]
             new_units_per_backdoor.append(new_units)
             unique_units.update(units)
-            print(f"Derived {len(units)} ({len(new_units)} new) units: {units}")
+            print(f"Derived {len(units)} ({len(new_units)} new, {sum(1 for x in units if x in cnf_units)} in cnf) units: {units}")
 
             binary = sorted(tuple(sorted(c, key=abs)) for c in clauses if len(c) == 2)
             binary_per_backdoor.append(binary)
-            new_binary = [x for x in binary if x not in unique_binary and x not in cnf_clauses_binary]
+            new_binary = [x for x in binary if x not in unique_binary]
             new_binary_per_backdoor.append(new_binary)
             unique_binary.update(binary)
-            print(f"Derived {len(binary)} ({len(new_binary)} new) binary clauses: {binary}")
+            print(f"Derived {len(binary)} ({len(new_binary)} new, {sum(1 for c in binary if c in cnf_binary)} in cnf) binary clauses: {binary}")
 
             ternary = sorted(tuple(sorted(c, key=abs)) for c in clauses if len(c) == 3)
             ternary_per_backdoor.append(ternary)
-            new_ternary = [x for x in ternary if x not in unique_ternary and x not in cnf_clauses_ternary]
+            new_ternary = [x for x in ternary if x not in unique_ternary]
             new_ternary_per_backdoor.append(new_ternary)
             unique_ternary.update(ternary)
-            print(f"Derived {len(ternary)} ({len(new_ternary)} new) ternary clauses: {ternary}")
+            print(f"Derived {len(ternary)} ({len(new_ternary)} new, {sum(1 for c in ternary if c in cnf_ternary)} in cnf) ternary clauses: {ternary}")
 
             large = sorted(tuple(sorted(c, key=abs)) for c in clauses if len(c) > 3)
             large_per_backdoor.append(large)
-            new_large = [x for x in large if x not in unique_large and x not in cnf_clauses_large]
+            new_large = [x for x in large if x not in unique_large]
             new_large_per_backdoor.append(new_large)
             unique_large.update(large)
-            print(f"Derived {len(large)} ({len(new_large)} new) large clauses: {large}")
+            print(f"Derived {len(large)} ({len(new_large)} new, {sum(1 for c in large if c in cnf_large)} in cnf) large clauses: {large}")
 
             if is_add_derived_units:
                 for unit in new_units:
@@ -205,11 +205,11 @@ def cli(
     )
 
     unique_units = sorted(unique_units, key=abs)
-    print(f"Derived {len(unique_units)} unique units: {unique_units}")
-    print(f"Derived {len(unique_binary)} unique binary")
-    print(f"Derived {len(unique_ternary)} unique ternary")
-    print(f"Derived {len(unique_large)} unique large")
-    print(f"Total derived {len(unique_units)+len(unique_binary)+len(unique_ternary)+len(unique_large)} unique clauses")
+    print(f"Derived {len(unique_units)} ({sum(1 for x in unique_units if x in cnf_units)} in cnf) unique units: {unique_units}")
+    print(f"Derived {len(unique_binary)} ({sum(1 for c in unique_binary if c in cnf_binary)} in cnf) unique binary")
+    print(f"Derived {len(unique_ternary)} ({sum(1 for c in unique_ternary if c in cnf_ternary)} in cnf) unique ternary")
+    print(f"Derived {len(unique_large)} ({sum(1 for c in unique_large if c in cnf_large)} in cnf) unique large")
+    print(f"Total derived {len(unique_units)+len(unique_binary)+len(unique_ternary)+len(unique_large)} ({sum(1 for x in unique_units if x in cnf_units) + sum(1 for c in unique_binary if c in cnf_binary) + sum(1 for c in unique_ternary if c in cnf_ternary) + sum(1 for c in unique_large if c in cnf_large)} in cnf) unique clauses")
 
     # print("New:")
     # for new_units in new_units_per_backdoor:
