@@ -1,9 +1,11 @@
-import re
-import mmap
+import contextlib
 import gzip
+import mmap
 import os
+import re
 from itertools import product
-from typing import List
+from typing import List, Iterable
+import tqdm
 
 
 def bool2int(b):
@@ -280,65 +282,79 @@ def parse_binary_drat(path):
             yield (mode, clause)
 
 
-def parse_binary_drat_mmap(path, use_tqdm=False):
-    if use_tqdm:
-        import tqdm
+def _parse_binary_drat_mmap(bs: Iterable[bytes]):
+    state = 0
+    # state = 0 -- reading the mode: b'a' or b'd'
+    # state = 1 -- reading the clause
+    mode = None  # "a" or "d", for user
+    lit = 0
+    shift = 0
+    clause = []
+
+    for b in bs:
+        if state == 0:
+            # Begin parsing a clause
+            if b == b"a":
+                mode = "a"
+            elif b == b"d":
+                mode = "d"
+            else:
+                raise ValueError(f"Bad clause header: {b}")
+            clause = []
+            lit = 0
+            shift = 0
+            state = 1
+
+        elif state == 1:
+            lit |= (ord(b) & 127) << shift
+            shift += 7
+            if ord(b) <= 127:
+                # Finish parsing a literal
+                if lit % 2:
+                    lit = -(lit >> 1)
+                else:
+                    lit = lit >> 1
+
+                if lit == 0:
+                    # Finish parsing a clause
+                    yield (mode, clause)
+                    mode = None
+                    state = 0
+                else:
+                    clause.append(lit)
+                    # Reset parsing a literal
+                    lit = 0
+                    shift = 0
+
+        else:
+            raise ValueError(f"Bad state: {state}")
+
+
+# @contextlib.contextmanager
+# def parse_binary_drat_mmap(path):
+#     with open(path, "rb") as f:
+#         with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+#             yield _parse_binary_drat_mmap(mm)
+
+
+@contextlib.contextmanager
+def parse_binary_drat_mmap_tqdm(path: str):
+    """
+    A context manager that yields an object supporting
+    lazy iteration over parsed data with tqdm progress.
+    """
+
+    class DratParserContext:
+        def __init__(self, t):
+            self.t = t
+
+        def __iter__(self):
+            return _parse_binary_drat_mmap(self.t)
 
     with open(path, "rb") as f:
         with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-            state = 0
-            # state = 0 -- reading the mode: b'a' or b'd'
-            # state = 1 -- reading the clause
-            mode = None  # "a" or "d", for user
-            lit = 0
-            shift = 0
-            clause = []
-
-            if use_tqdm:
-                it = tqdm.tqdm(mm)
-            else:
-                it = mm
-
-            for b in it:
-                if state == 0:
-                    # Begin parsing a clause
-                    if b == b"a":
-                        mode = "a"
-                    elif b == b"d":
-                        mode = "d"
-                    else:
-                        raise ValueError(f"Bad clause header: {b}")
-                    clause = []
-                    lit = 0
-                    shift = 0
-                    state = 1
-
-                elif state == 1:
-                    lit |= (ord(b) & 127) << shift
-                    shift += 7
-                    if ord(b) <= 127:
-                        # Finish parsing a literal
-                        if lit % 2:
-                            lit = -(lit >> 1)
-                        else:
-                            lit = lit >> 1
-
-                        if lit == 0:
-                            # Finish parsing a clause
-                            yield (mode, clause)
-                            mode = None
-                            state = 0
-                        else:
-                            clause.append(lit)
-                            # Reset parsing a literal
-                            lit = 0
-                            shift = 0
-
-                else:
-                    raise ValueError(f"Bad state: {state}")
-
-            if use_tqdm:
-                it.close()
+            with tqdm.tqdm(mm) as t:
+                yield DratParserContext(t)
 
 
 def get_file_size(file):

@@ -33,11 +33,11 @@ def cli(
     # print(f"CNF variables: {cnf.nv}")
 
     print()
-    print(f"Extracting clauses from '{path_drat}'...")
+    print(f"Extracting clauses{f' (max-size = {max_size})' if max_size else ''} from '{path_drat}'...")
     clauses = []
 
-    with tqdm.tqdm(parse_binary_drat(path_drat)) as t:
-        for mode, clause in t:
+    with parse_binary_drat_mmap_tqdm(path_drat) as parser:
+        for mode, clause in parser:
             if mode == "a":
                 # 'added' clause
                 if max_size and len(clause) > max_size:
@@ -52,10 +52,10 @@ def cli(
                 raise ValueError(f"Bad clause mode: '{mode}'")
 
             if limit and len(clauses) >= limit:
-                t.write(f"Reached limit {limit} of extracted clauses")
+                parser.t.write(f"Reached limit {limit} of extracted clauses")
                 break
 
-    print(f"# {clause = }")
+    print(f"# last clause = {clause}")
 
     # Report extracted clauses
     print(f"Exracted {len(clauses)} clauses")
