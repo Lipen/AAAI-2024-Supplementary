@@ -197,22 +197,22 @@ def cli(
         print(f"Writing results to '{path_output}'...")
         with open(path_output, "w") as f:
             for unit in unique_units:
-                if not is_allow_duplicates and unit not in cnf_units:
+                if not is_allow_duplicates and unit in cnf_units:
                     # skip duplicate
                     continue
                 f.write(f"{unit} 0\n")
             for c in unique_binary:
-                if not is_allow_duplicates and c not in cnf_binary:
+                if not is_allow_duplicates and c in cnf_binary:
                     # skip duplicate
                     continue
                 f.write(" ".join(map(str, c)) + " 0\n")
             for c in unique_ternary:
-                if not is_allow_duplicates and c not in cnf_ternary:
+                if not is_allow_duplicates and c in cnf_ternary:
                     # skip duplicate
                     continue
                 f.write(" ".join(map(str, c)) + " 0\n")
             for c in unique_large:
-                if not is_allow_duplicates and c not in cnf_large:
+                if not is_allow_duplicates and c in cnf_large:
                     # skip duplicate
                     continue
                 f.write(" ".join(map(str, c)) + " 0\n")
