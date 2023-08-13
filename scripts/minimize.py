@@ -24,6 +24,9 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"], max_content_width=99
     show_default=True,
     help="Number of conflicts in 'solve_limited' (0 for using 'propagate')",
 )
+@click.option(
+    "--allow-duplicates/--no-duplicates", "is_allow_duplicates", default=True, help="Dump clauses which already present in CNF"
+)
 def cli(
     path_cnf,
     path_backdoors,
@@ -31,6 +34,7 @@ def cli(
     limit_backdoors,
     is_add_derived_units,
     num_confl,
+    is_allow_duplicates,
 ):
     time_start = time.time()
 
@@ -193,12 +197,24 @@ def cli(
         print(f"Writing results to '{path_output}'...")
         with open(path_output, "w") as f:
             for unit in unique_units:
+                if not is_allow_duplicates and unit not in cnf_units:
+                    # skip duplicate
+                    continue
                 f.write(f"{unit} 0\n")
             for c in unique_binary:
+                if not is_allow_duplicates and c not in cnf_binary:
+                    # skip duplicate
+                    continue
                 f.write(" ".join(map(str, c)) + " 0\n")
             for c in unique_ternary:
+                if not is_allow_duplicates and c not in cnf_ternary:
+                    # skip duplicate
+                    continue
                 f.write(" ".join(map(str, c)) + " 0\n")
             for c in unique_large:
+                if not is_allow_duplicates and c not in cnf_large:
+                    # skip duplicate
+                    continue
                 f.write(" ".join(map(str, c)) + " 0\n")
 
     print()
